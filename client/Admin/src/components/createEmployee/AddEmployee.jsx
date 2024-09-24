@@ -1,119 +1,74 @@
 import React, { useEffect, useState } from 'react';
 import './CreateEmployee.css';
-import Navbar from '../navbar/Navbar';
-import { FaTimes } from 'react-icons/fa'; // Import the close icon from react-icons
-import { CreateEmployee } from '../../api'
-import { UpdateEmployeeById } from '../../api'
+import { FaTimes } from 'react-icons/fa';
+import { CreateEmployee, UpdateEmployeeById } from '../../api';
 
-const AddEmployee = ({ showModal, setShowModal ,fetchEmployees ,updateEmpObj}) => {
+const AddEmployee = ({ showModal, setShowModal, fetchEmployees, updateEmpObj }) => {
   const [formData, setFormData] = useState({
     employeename: '',
     email: '',
     phone: '',
     designation: '',
     gender: '',
-    course: '',
+    course: [], // Initialize as an empty array
     image: null,
   });
 
-  const [updateMode,setUpdateMode]=useState(false)
+  const [updateMode, setUpdateMode] = useState(false);
 
-  useEffect(()=>{
-    if(updateEmpObj){
-        setUpdateMode(true)
-        setFormData(updateEmpObj)
+  // Pre-populate form if updateEmpObj is provided
+  useEffect(() => {
+    if (updateEmpObj) {
+      setUpdateMode(true);
+      setFormData(updateEmpObj);
     }
-  },[updateEmpObj])
+  }, [updateEmpObj]);
 
-  const resetEmployeeStates=()=>{
+  const resetEmployeeStates = () => {
     setFormData({
-        employeename: '',
-        email: '',
-        phone: '',
-        designation: '',
-        gender: '',
-        course: '',
-        image: null,
-      })
-  }
+      employeename: '',
+      email: '',
+      phone: '',
+      designation: '',
+      gender: '',
+      course: [],
+      image: null,
+    });
+  };
 
   const [errors, setErrors] = useState({});
 
-  // Validate email format
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
   // Handle form submission
-  const handleSubmit = async(e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
 
-    try{
-        const {success,message}=updateMode ? await UpdateEmployeeById(formData,formData._id) : await CreateEmployee(formData);
-        console.log(success,message);
-        if(success){
-            console.log("success",message);
-        }else{
-            console.log("Error",message);
-        }
-        setShowModal(false)
-        resetEmployeeStates();
-        fetchEmployees();
-    }catch(err){
-        console.log("Error to create ",err)
-    }
-
-
-    console.log(formData);
-    // Name validation
+    // Validate form data
     if (!formData.employeename) newErrors.employeename = 'Name is required';
-
-    // Email validation
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'Invalid email format';
-    }
-
-    // Phone validation
-    if (!formData.phone) {
-      newErrors.phone = 'Phone number is required';
-    } else if (formData.phone.length !== 10) {
-      newErrors.phone = 'Phone number must be exactly 10 digits';
-    }
-
-    // Designation validation
-    if (!formData.designation) {
-      newErrors.designation = 'Designation is required';
-    }
-
-    // Gender validation
-    if (!formData.gender) {
-      newErrors.gender = 'Gender is required';
-    }
-
-    // Course validation
-    if (!formData.course) {
-      newErrors.course = 'Course is required';
-    }
-
-    // Image validation
-    if (!formData.image) {
-      newErrors.image = 'Image is required';
-    }
+    if (!formData.email) newErrors.email = 'Email is required';
+    if (formData.phone.length !== 10) newErrors.phone = 'Phone number must be exactly 10 digits';
+    if (!formData.designation) newErrors.designation = 'Designation is required';
+    if (!formData.gender) newErrors.gender = 'Gender is required';
+    if (formData.course.length === 0) newErrors.course = 'At least one course must be selected';
+    if (!formData.image && !updateMode) newErrors.image = 'Image is required';
 
     setErrors(newErrors);
 
-    // If no errors, submit form data
     if (Object.keys(newErrors).length === 0) {
-      console.log('Form Submitted', formData);
-      // Handle form submission logic here
+      try {
+        const { success, message } = updateMode
+          ? await UpdateEmployeeById(formData, formData._id)
+          : await CreateEmployee(formData);
+        console.log(success, message);
+        if (success) {
+          setShowModal(false);
+          resetEmployeeStates();
+          fetchEmployees();
+        }
+      } catch (err) {
+        console.log("Error while creating/updating employee", err);
+      }
     }
-    
-  
-
   };
 
   // Handle input changes
@@ -125,6 +80,22 @@ const AddEmployee = ({ showModal, setShowModal ,fetchEmployees ,updateEmpObj}) =
     });
   };
 
+  // Handle multiple course selections
+  const handleCourseChange = (e) => {
+    const { value, checked } = e.target;
+    if (checked) {
+      setFormData((prevState) => ({
+        ...prevState,
+        course: [...prevState.course, value], // Add the selected course
+      }));
+    } else {
+      setFormData((prevState) => ({
+        ...prevState,
+        course: prevState.course.filter((course) => course !== value), // Remove the deselected course
+      }));
+    }
+  };
+
   // Handle file input
   const handleFileChange = (e) => {
     setFormData({
@@ -133,13 +104,12 @@ const AddEmployee = ({ showModal, setShowModal ,fetchEmployees ,updateEmpObj}) =
     });
   };
 
-  const onClose=()=>{
-    setShowModal(false)
-  }
+  const onClose = () => {
+    setShowModal(false);
+  };
 
   return (
     <>
-      
       {showModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
@@ -157,7 +127,7 @@ const AddEmployee = ({ showModal, setShowModal ,fetchEmployees ,updateEmpObj}) =
             <nav className="mb-4 flex items-center justify-between">
               <h1 className="text-lg font-bold">{updateMode ? "Update Employee" : "Create Employee"}</h1>
             </nav>
-            <form onSubmit={(e)=>handleSubmit(e)} className="space-y-3">
+            <form onSubmit={handleSubmit} className="space-y-3">
               {/* Name Field */}
               <div>
                 <label className="block text-gray-700 text-sm">Name</label>
@@ -168,7 +138,7 @@ const AddEmployee = ({ showModal, setShowModal ,fetchEmployees ,updateEmpObj}) =
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded"
                 />
-                {errors.name && <p className="text-red-500 text-xs">{errors.name}</p>}
+                {errors.employeename && <p className="text-red-500 text-xs">{errors.employeename}</p>}
               </div>
 
               {/* Email Field */}
@@ -249,46 +219,18 @@ const AddEmployee = ({ showModal, setShowModal ,fetchEmployees ,updateEmpObj}) =
               <div>
                 <label className="block text-gray-700 text-sm">Course</label>
                 <div className="space-y-1">
-                  <label>
-                    <input
-                      type="checkbox"
-                      name="course"
-                      value="MCA"
-                      onChange={handleChange}
-                      checked={formData.course === 'MCA'}
-                    />{' '}
-                    MCA
-                  </label>
-                  <label>
-                    <input
-                      type="checkbox"
-                      name="course"
-                      value="MBA"
-                      onChange={handleChange}
-                      checked={formData.course === 'MBA'}
-                    />{' '}
-                    MBA
-                  </label>
-                  <label>
-                    <input
-                      type="checkbox"
-                      name="course"
-                      value="BSC"
-                      onChange={handleChange}
-                      checked={formData.course === 'BSC'}
-                    />{' '}
-                    BSC
-                  </label>
-                  <label>
-                    <input
-                      type="checkbox"
-                      name="course"
-                      value="CSE"
-                      onChange={handleChange}
-                      checked={formData.course === 'CSE'}
-                    />{' '}
-                    CSE
-                  </label>
+                  {["MCA", "MBA", "BSC", "CSE"].map(course => (
+                    <label key={course}>
+                      <input
+                        type="checkbox"
+                        name="course"
+                        value={course}
+                        onChange={handleCourseChange}
+                        checked={formData.course.includes(course)} // Check if course is selected
+                      />{' '}
+                      {course}
+                    </label>
+                  ))}
                 </div>
                 {errors.course && <p className="text-red-500 text-xs">{errors.course}</p>}
               </div>
@@ -309,10 +251,7 @@ const AddEmployee = ({ showModal, setShowModal ,fetchEmployees ,updateEmpObj}) =
                 type="submit"
                 className="bg-blue-500 text-white px-4 py-2 rounded mt-4 w-full"
               >
-                {
-                    updateMode ? 'Update' : 'Submit'
-                }
-                
+                {updateMode ? 'Update' : 'Submit'}
               </button>
             </form>
           </div>

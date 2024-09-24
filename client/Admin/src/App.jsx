@@ -6,6 +6,8 @@ import Home from './pages/Home'
 import ErrorHandle from './components/error/ErrorHandle'
 import CreateEmployee from './components/createEmployee/CreateEmployee'
 import EmployeeDetails from './components/createEmployee/EmployeeDetails'
+import PrivateRoute from './components/PrivateRoute'
+import LoginFl from './components/login/LoginFl'
 
 const App = () => {
   
@@ -13,12 +15,17 @@ const App = () => {
    
     <BrowserRouter>
     <Routes>
-      <Route path='/' element={<Login />}/>
-      <Route path='/home' element={<Home />}/>
-      <Route path='/employee-list' element={<CreateEmployee />}/>
-      <Route path='/employee/:id' element={<EmployeeDetails />}/>
-      <Route path='*' element={<ErrorHandle />}/>
-    </Routes>
+        <Route path='/' element={<LoginFl />} /> {/* Public route */}
+        
+        {/* Private routes wrapped in PrivateRoute */}
+        <Route element={<PrivateRoute />}>
+          <Route path='/home' element={<Home />} />
+          <Route path='/employee-list' element={<CreateEmployee />} />
+          <Route path='/employee/:id' element={<EmployeeDetails />} />
+        </Route>
+
+        <Route path='*' element={<ErrorHandle />} /> {/* Catch-all route */}
+      </Routes>
     </BrowserRouter>
  
 
