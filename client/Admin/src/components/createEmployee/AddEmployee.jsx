@@ -46,7 +46,7 @@ const AddEmployee = ({ showModal, setShowModal, fetchEmployees, updateEmpObj }) 
     // Validate form data
     if (!formData.employeename) newErrors.employeename = 'Name is required';
     if (!formData.email) newErrors.email = 'Email is required';
-    if (formData.phone.length !== 10) newErrors.phone = 'Phone number must be exactly 10 digits';
+    if (formData.phone.length !==10) newErrors.phone = 'Phone number must be exactly 10 digits';
     if (!formData.designation) newErrors.designation = 'Designation is required';
     if (!formData.gender) newErrors.gender = 'Gender is required';
     if (formData.course.length === 0) newErrors.course = 'At least one course must be selected';
